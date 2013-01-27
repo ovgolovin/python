@@ -39,7 +39,7 @@ def tests():
 
     # With decorator
     # First variant of application: lazy decorator is applied to decorator every time decorator is applied.
-    # Not very good way of using it as decorator is applied every time the function is called
+    # Not very good way of using it as decorator is applied every time the decorator is applied to function
     print('Using lazy decorator\n----')
     @make_decorator_lazy(special_heavy_decorator_for_print_function)
     def print_function():
