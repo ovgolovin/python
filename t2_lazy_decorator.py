@@ -4,8 +4,8 @@ from __future__ import division
 from functools import wraps
 
 def make_decorator_lazy(decorator):
-    lazy_decorated = []
     def new_lazy_decorator(f):
+        lazy_decorated = []
         @wraps(f)
         def decorated(*args, **kwargs):
             if not lazy_decorated:
