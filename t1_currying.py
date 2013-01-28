@@ -6,6 +6,40 @@ from functools import wraps
 
 
 class Curried(object):
+    def __init__(self,f):
+        self.f = f
+        self.__name__ = 'curried_{}'.format(f.func_name)
+        self.__module__ = f.__module__
+        self.__doc__ = f.__doc__
+
+        arguments = inspect.getargspec(f).args
+        defaults = inspect.getargspec(f).defaults
+        self.all_arguments = {} if defaults is None else dict(zip(arguments[-len(defaults):], defaults))
+        self.expected_args = set(arguments if defaults is None else arguments[:len(arguments)-len(defaults)])
+        self.positional_args = arguments
+        pass
+
+    def __call__(self, *args, **kwargs):
+        if len(args) > len(self.positional_args):
+            raise(TypeError('You have provided more positional arguments than needed.'))
+        arguments_update = dict(zip(self.positional_args, args))
+        self.all_arguments.update(arguments_update)
+        self.expected_args.difference_update(arguments_update.viewkeys())
+        self.positional_args = self.positional_args[len(arguments_update):]
+
+        self.all_arguments.update(kwargs)
+        self.expected_args.difference_update(kwargs.viewkeys())
+
+        if not self.expected_args:
+            return self.f(**self.all_arguments)
+        else:
+            return self
+
+    def __repr__(self):
+        return 'curry({})({})'.format(self.f.func_name,
+            ', '.join('{}={}'.format(key,value) for key, value in self.all_arguments.iteritems()))
+
+def curry(f):
     """
     Make function curried, so that it will accept this parameters passing.
     @curry
@@ -14,47 +48,17 @@ class Curried(object):
 
     f(a,b,c) = f(a,b)(c) = f(a)(b,c) = f(a)(b)(c)
     """
-
-    def __init__(self,f):
-        self.f = f
-
-        arguments = inspect.getargspec(f).args
-        defaults = inspect.getargspec(f).defaults
-        self.arguments = {} if defaults is None else dict(zip(arguments[-len(defaults):], defaults))
-        self.expected_args = arguments if defaults is None else arguments[len(arguments)-len(defaults):]
-
-    def __call__(self, *args, **kwargs):
-        if len(args) > len(self.expected_args):
-            raise(TypeError('You have provided more positional arguments than needed.'))
-        arguments_update = zip(self.expected_args, args)
-        self.arguments.update(arguments_update)
-        self.expected_args = self.expected_args[len(arguments_update):]
-
-        self.arguments.update(kwargs)
-        self.expected_args = [arg for arg in self.expected_args if arg not in kwargs]
-
-        if not self.expected_args:
-            return self.f(**self.arguments)
-        else:
-            return self
-
-    def __repr__(self):
-        return '\n'.join((
-        'You have provided arguments: {}'.format(self.arguments),
-        'You have left to provide: {}'.format(self.expected_args)
-        ))
-
-def curry(f):
     @wraps(f)
     def helper(*args,**kwargs):
-        return Curried(f)(*args,**kwargs)
+        return Curried(f)(*args,**kwargs) #first invocation of curried function must return a new Curried object
+    helper.__name__ = 'curried_{}'.format(f.func_name)
     return helper
 
 
 def tests():
 
     @curry
-    def mul(a,b,c,d):
+    def mul(a,b,c,d=4):
         """
         Return multiplication of all arguments
         """
@@ -63,9 +67,10 @@ def tests():
     assert(mul(1,2,3,4)==24)
     assert(mul(1)(2,3,4)==24)
     assert(mul(1,2)(3,4) == 24)
-    assert(mul(1,2,3)(4) == 24)
-    assert(mul(a=1,b=2,c=3)(d=4) == 24)
+    assert(mul(1,2,3) == 24)
+    assert(mul(a=1,b=2,c=3) == 24)
     assert(mul(1,b=2,c=3,d=4) == 24)
+
 
     @curry
     def mul(a,b,c,d,**kwargs):
