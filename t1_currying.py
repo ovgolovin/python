@@ -4,7 +4,6 @@ from __future__ import division
 import inspect
 from functools import wraps
 from itertools import chain, izip
-import collections
 
 
 
