@@ -3,7 +3,8 @@ from __future__ import division
 
 import inspect
 from functools import wraps
-from itertools import chain
+from itertools import chain, izip
+import collections
 
 
 
@@ -18,12 +19,24 @@ class Curried(object):
         self.positional_arguments = inspect.getargspec(f).args
         self.positional_arguments_required = inspect.getargspec(f).args
         default_arguments = inspect.getargspec(f).defaults
-        self.gathered_arguments = {} if default_arguments is None else dict(
-            zip(self.positional_arguments_required[-len(default_arguments):], default_arguments))
-        self.expected_arguments = set(
-            self.positional_arguments_required if default_arguments is None
-            else self.positional_arguments_required[:len(self.positional_arguments_required)-len(default_arguments)])
+        if default_arguments is None:
+            self.gathered_arguments = {}
+            self.expected_arguments = set(self.positional_arguments)
+        else:
+            args_first, args_second = Curried._list_split_helper(
+                self.positional_arguments_required, -len(default_arguments))
+            self.gathered_arguments = dict(zip(args_second, default_arguments))
+            self.expected_arguments = set(args_first)
         self.extra_positional_arguments = []
+
+    @staticmethod
+    def _list_split_helper(alist, indices):
+        if not isinstance(indices, collections.Iterable):
+            indices = [indices]
+        list_length = len(alist)
+        indices = [list_length + index if index < 0 else index for index in indices]
+        pairs = izip(chain([0], indices), chain(indices, [None]))
+        return (alist[i:j] for i, j in pairs)
 
     def __call__(self, *args, **kwargs):
         if len(args) > len(self.positional_arguments_required):
