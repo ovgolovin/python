@@ -8,6 +8,7 @@ import collections
 
 
 
+
 class Curried(object):
     def __init__(self,f):
         self.f = f
@@ -30,9 +31,7 @@ class Curried(object):
         self.extra_positional_arguments = []
 
     @staticmethod
-    def _list_split_helper(alist, indices):
-        if not isinstance(indices, collections.Iterable):
-            indices = [indices]
+    def _list_split_helper(alist, *indices):
         list_length = len(alist)
         indices = [list_length + index if index < 0 else index for index in indices]
         pairs = izip(chain([0], indices), chain(indices, [None]))
