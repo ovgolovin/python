@@ -10,44 +10,50 @@ from itertools import chain
 class Curried(object):
     def __init__(self,f):
         self.f = f
+
         self.__name__ = 'curried_{}'.format(f.func_name)
         self.__module__ = f.__module__
         self.__doc__ = f.__doc__
 
-        arguments = inspect.getargspec(f).args
-        defaults = inspect.getargspec(f).defaults
-        self.all_arguments = {} if defaults is None else dict(zip(arguments[-len(defaults):], defaults))
-        self.expected_args = set(arguments if defaults is None else arguments[:len(arguments)-len(defaults)])
-        self.positional_args = arguments
-        self.args = []
-        pass
+        self.positional_arguments = inspect.getargspec(f).args
+        self.positional_arguments_required = inspect.getargspec(f).args
+        default_arguments = inspect.getargspec(f).defaults
+        self.gathered_arguments = {} if default_arguments is None else dict(
+            zip(self.positional_arguments_required[-len(default_arguments):], default_arguments))
+        self.expected_arguments = set(
+            self.positional_arguments_required if default_arguments is None
+            else self.positional_arguments_required[:len(self.positional_arguments_required)-len(default_arguments)])
+        self.extra_positional_arguments = []
 
     def __call__(self, *args, **kwargs):
-        if len(args) > len(self.positional_args):
-            self.args.extend(args[len(self.positional_args):])
-            args = args[:len(self.positional_args)]
-        arguments_update = dict(zip(self.positional_args, args))
-        self.all_arguments.update(arguments_update)
-        self.expected_args.difference_update(arguments_update.viewkeys())
-        self.positional_args = self.positional_args[len(arguments_update):]
+        if len(args) > len(self.positional_arguments_required):
+            self.extra_positional_arguments.extend(args[len(self.positional_arguments_required):])
+            args = args[:len(self.positional_arguments_required)] # get only needed part of args
+        args_as_dict = dict(zip(self.positional_arguments_required, args))
+        self.gathered_arguments.update(args_as_dict)
+        self.expected_arguments.difference_update(args_as_dict.viewkeys())
+        self.positional_arguments_required = self.positional_arguments_required[len(args_as_dict):]
 
-        self.all_arguments.update(kwargs)
-        self.expected_args.difference_update(kwargs.viewkeys())
+        self.gathered_arguments.update(kwargs)
+        self.expected_arguments.difference_update(kwargs.viewkeys())
 
-        if not self.expected_args:
-            arguments = inspect.getargspec(self.f).args
-            positional_values = [self.all_arguments[arg] for arg in arguments]
-            keyword_arguments = dict(((key,value) for (key,value) in self.all_arguments.iteritems() if key not in set(arguments)))
-            return self.f(*(positional_values + self.args), **keyword_arguments)
+        if not self.expected_arguments: # We have all obligatory arguments as for now
+            positional_values = [self.gathered_arguments[arg] for arg in self.positional_arguments]
+            keyword_arguments = dict(((key,value) for (key,value) in self.gathered_arguments.iteritems()
+                if key not in set(self.positional_arguments)))
+            return self.f(*(positional_values + self.extra_positional_arguments), **keyword_arguments)
         else:
             return self
 
     def __repr__(self):
-        arguments = inspect.getargspec(self.f).args
-        arguments_dict = dict(((key,value) for (key,value) in self.all_arguments.iteritems() if key in set(arguments)))
-        keyword_arguments = dict(((key,value) for (key,value) in self.all_arguments.iteritems() if key not in set(arguments)))
+        arguments_dict = dict(((key,value) for (key,value) in self.gathered_arguments.iteritems()
+            if key in set(self.positional_arguments)))
+        keyword_arguments = dict(((key,value) for (key,value) in self.gathered_arguments.iteritems()
+            if key not in set(self.positional_arguments)))
         return 'curry({})({})'.format(self.f.func_name,
-            ', '.join('{}={}'.format(key,value) for key, value in chain(arguments_dict.iteritems(),keyword_arguments.iteritems())))
+            ', '.join(
+                '{}={}'.format(key,value)
+                for key, value in chain(arguments_dict.iteritems(),keyword_arguments.iteritems())))
 
 def curry(f):
     """
