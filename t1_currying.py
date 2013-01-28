@@ -31,36 +31,45 @@ class Curried(object):
 
     @staticmethod
     def _list_split_helper(alist, *indices):
+        """
+        Split alist at positions specified by indices and return iterator over resulting lists.
+        """
         list_length = len(alist)
         indices = [list_length + index if index < 0 else index for index in indices]
         pairs = izip(chain([0], indices), chain(indices, [None]))
         return (alist[i:j] for i, j in pairs)
 
-    def __call__(self, *args, **kwargs):
-        if len(args) > len(self.positional_arguments_required):
-            self.extra_positional_arguments.extend(args[len(self.positional_arguments_required):])
-            args = args[:len(self.positional_arguments_required)] # get only needed part of args
-        args_as_dict = dict(zip(self.positional_arguments_required, args))
+    def _update_gathered_and_expected_args_with_dict(self, args_as_dict):
         self.gathered_arguments.update(args_as_dict)
         self.expected_arguments.difference_update(args_as_dict.viewkeys())
+
+    def __call__(self, *args, **kwargs):
+        # get only needed part of args
+        if len(args) > len(self.positional_arguments_required):
+            self.extra_positional_arguments.extend(args[len(self.positional_arguments_required):])
+            args = args[:len(self.positional_arguments_required)]
+
+        args_as_dict = dict(zip(self.positional_arguments_required, args))
+        self._update_gathered_and_expected_args_with_dict(args_as_dict)
         self.positional_arguments_required = self.positional_arguments_required[len(args_as_dict):]
 
-        self.gathered_arguments.update(kwargs)
-        self.expected_arguments.difference_update(kwargs.viewkeys())
+        self._update_gathered_and_expected_args_with_dict(kwargs)
 
         if not self.expected_arguments: # We have all obligatory arguments as for now
-            positional_values = [self.gathered_arguments[arg] for arg in self.positional_arguments]
-            keyword_arguments = dict(((key,value) for (key,value) in self.gathered_arguments.iteritems()
-                if key not in set(self.positional_arguments)))
-            return self.f(*(positional_values + self.extra_positional_arguments), **keyword_arguments)
+            positional_dict, keyword_arguments = self._get_output_args_and_kwargs()
+            return self.f(*(positional_dict.values() + self.extra_positional_arguments), **keyword_arguments)
         else:
             return self
 
-    def __repr__(self):
-        arguments_dict = dict(((key,value) for (key,value) in self.gathered_arguments.iteritems()
+    def _get_output_args_and_kwargs(self):
+        args_dict = dict(((key, value) for (key, value) in self.gathered_arguments.iteritems()
             if key in set(self.positional_arguments)))
-        keyword_arguments = dict(((key,value) for (key,value) in self.gathered_arguments.iteritems()
+        kwargs = dict(((key, value) for (key, value) in self.gathered_arguments.iteritems()
             if key not in set(self.positional_arguments)))
+        return args_dict, kwargs
+
+    def __repr__(self):
+        arguments_dict, keyword_arguments = self._get_output_args_and_kwargs()
         return 'curry({})({})'.format(self.f.func_name,
             ', '.join(
                 '{}={}'.format(key,value)
