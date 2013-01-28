@@ -3,6 +3,8 @@ from __future__ import division
 
 import inspect
 from functools import wraps
+from itertools import chain
+
 
 
 class Curried(object):
@@ -17,11 +19,13 @@ class Curried(object):
         self.all_arguments = {} if defaults is None else dict(zip(arguments[-len(defaults):], defaults))
         self.expected_args = set(arguments if defaults is None else arguments[:len(arguments)-len(defaults)])
         self.positional_args = arguments
+        self.args = []
         pass
 
     def __call__(self, *args, **kwargs):
         if len(args) > len(self.positional_args):
-            raise(TypeError('You have provided more positional arguments than needed.'))
+            self.args.extend(args[len(args) - len(self.positional_args):])
+            args = args[:len(args) - len(self.positional_args)]
         arguments_update = dict(zip(self.positional_args, args))
         self.all_arguments.update(arguments_update)
         self.expected_args.difference_update(arguments_update.viewkeys())
@@ -31,13 +35,19 @@ class Curried(object):
         self.expected_args.difference_update(kwargs.viewkeys())
 
         if not self.expected_args:
-            return self.f(**self.all_arguments)
+            arguments = inspect.getargspec(self.f).args
+            positional_values = [self.all_arguments[arg] for arg in arguments]
+            keyword_arguments = dict(((key,value) for (key,value) in self.all_arguments.iteritems() if key not in set(arguments)))
+            return self.f(*(positional_values + self.args), **keyword_arguments)
         else:
             return self
 
     def __repr__(self):
+        arguments = inspect.getargspec(self.f).args
+        arguments_dict = dict(((key,value) for (key,value) in self.all_arguments.iteritems() if key in set(arguments)))
+        keyword_arguments = dict(((key,value) for (key,value) in self.all_arguments.iteritems() if key not in set(arguments)))
         return 'curry({})({})'.format(self.f.func_name,
-            ', '.join('{}={}'.format(key,value) for key, value in self.all_arguments.iteritems()))
+            ', '.join('{}={}'.format(key,value) for key, value in chain(arguments_dict.iteritems(),keyword_arguments.iteritems())))
 
 def curry(f):
     """
