@@ -24,8 +24,8 @@ class Curried(object):
 
     def __call__(self, *args, **kwargs):
         if len(args) > len(self.positional_args):
-            self.args.extend(args[len(args) - len(self.positional_args):])
-            args = args[:len(args) - len(self.positional_args)]
+            self.args.extend(args[len(self.positional_args):])
+            args = args[:len(self.positional_args)]
         arguments_update = dict(zip(self.positional_args, args))
         self.all_arguments.update(arguments_update)
         self.expected_args.difference_update(arguments_update.viewkeys())
@@ -68,7 +68,7 @@ def curry(f):
 def tests():
 
     @curry
-    def mul(a,b,c,d=4):
+    def mul(a,b,c,d=4,*args,**kwargs):
         """
         Return multiplication of all arguments
         """
