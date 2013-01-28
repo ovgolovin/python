@@ -39,8 +39,10 @@ class Curried(object):
             return self
 
     def __repr__(self):
-        print('You have provided arguments: {}'.format(self.arguments))
-        print('You have left to provide: {}'.format(self.expected_args))
+        return '\n'.join((
+        'You have provided arguments: {}'.format(self.arguments),
+        'You have left to provide: {}'.format(self.expected_args)
+        ))
 
 def curry(f):
     @wraps(f)
