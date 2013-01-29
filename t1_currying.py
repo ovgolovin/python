@@ -17,7 +17,7 @@ class Curried(object):
         self.__doc__ = f.__doc__
 
         self.positional_arguments = inspect.getargspec(f).args
-        self.positional_arguments_required = inspect.getargspec(f).args
+        self.positional_arguments_required = self.positional_arguments.copy()
         default_arguments = inspect.getargspec(f).defaults
         if default_arguments is None:
             self.gathered_arguments = {}
