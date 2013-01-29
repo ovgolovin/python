@@ -1,39 +1,45 @@
 #!/usr/bin/env python
 from __future__ import division
-from itertools import islice
+from itertools import islice, count
 
 def primes():
     """
-    Prime numbers generator based on very efficient implementation of Eratosthenes sieve algorithm.
+    Prime numbers generator based on very efficient variant of Sieve of Eratosthenes algorithm.
 
     Solution based on this answer: http://stackoverflow.com/a/10733621/862380
     and this discussion: http://code.activestate.com/recipes/117119/
 
-    This solution uses later addition of stepping information for a prime
-    into the dict only when the prime's square is seen among the candidates.
-    This results in much smaller dict with performance and empirical time complexity improvement as well.
+    This solution uses postponed prime multiple addition to the dictionary,
+    which happens at the moment when the current iterator prime guess encounters the square
+    of the prime from subgenerator.
+    At first glance it takes a subgenerator to produce the primes which already have been produced,
+    but it appears to be much more efficient to generate primes again than to save generated primes
+    from the current generator.
+    This results in much smaller memory footstep and better time complexity.
     """
 
-    yield 2
-    yield 3
-    D = {}
-    c = 5 #3+2 (because we advance by 2 (not 1) as another means of optimization)
-    ps = (p for p in primes()) #subiterator (runs the same prime generator to be used to produce squares of its values)
-    next(ps) #skip 2 (because we avoid 2 by advancing by 2, not 1 : we use c+=2)
-    p = next(ps) #3
-    q = p*p #9
-    while True:
-        if c not in D:
-            if c < q:
-                yield c
-            else: #c==q
-                x = add(D,c+2*p,2*p) #we add next after q=p*p multiple of p to D now, remembering that we avoid multiples of 2
+    for value in (2,3,5,7):
+        yield value
+    D = {} # map each composite integer to its first-found prime factor
+    ps = (p for p in primes()) #subiterator (runs the same prime generator to be used to get squares of its values)
+    next(ps)    # we may skip p = 2 as we avoid multiples of 2 in the algorithm, and start from p = 3 which multiples
+                # must figure in D
+    p = next(ps) # 3
+    q = p*p # 9
+    for guess in count(9, 2): # 9 = 7 + 2 (because we advance by 2 (not 1) as just another means of optimization)
+        s = D.pop(guess, None)
+        if s is None: # no value for s in D
+            if guess < q:   # this is a prime, since it would be in the D otherwise
+                            # (some of its factors would put it here as a multiple of itself)
+                yield guess # We don't save its square to D as we may do it later by getting values from subgenertor
+                            # which turns out to be much more efficient
+            else: # guess == q, and q is is p*p, so it's not a prime
+                add(D, guess + 2 * p, 2 * p)    # we add to D the next multiple of p after p*p now,
+                                                # remembering that we avoid multiples of 2
                 p = next(ps) #the next value of p and q we take from subgenerator.
                 q = p*p
         else:
-            s = D.pop(c) #just move the existing value in D forward by s=2*p
-            x = add(D,c+s,s)
-        c += 2; #advance by 2 to a
+            add(D, guess + s, s)
 
 def add(D,x,s):
     while x in D:
