@@ -20,7 +20,8 @@ def primes():
 
     for value in (2,3,5,7):
         yield value
-    D = {} # map each composite integer to its first-found prime factor
+    D = {}  # map each composite integer to its first-found prime factor
+            # (the first prime factor that revealed to us that number is a composite is a value in this dict)
     ps = (p for p in primes()) #subiterator (runs the same prime generator to be used to get squares of its values)
     next(ps)    # we may skip p = 2 as we avoid multiples of 2 in the algorithm, and start from p = 3 which multiples
                 # must figure in D
@@ -30,20 +31,22 @@ def primes():
         s = D.pop(guess, None)
         if s is None: # no value for s in D
             if guess < q:   # this is a prime, since it would be in the D otherwise
-                            # (some of its factors would put it here as a multiple of itself)
+                            # (some of its factors would put it here as a multiple of itself    )
                 yield guess # We don't save its square to D as we may do it later by getting values from subgenertor
                             # which turns out to be much more efficient
             else: # guess == q, and q is is p*p, so it's not a prime
-                add(D, guess + 2 * p, 2 * p)    # we add to D the next multiple of p after p*p now,
+                add(D, guess, 2 * p)    # we add to D the next multiple of p after p*p now,
                                                 # remembering that we avoid multiples of 2
                 p = next(ps) #the next value of p and q we take from subgenerator.
                 q = p*p
         else:
-            add(D, guess + s, s)
+            add(D, guess, s)
 
-def add(D,x,s):
-    while x in D:
+def add(D, x, s):
+    while True:
         x += s
+        if x not in D:
+            break
     D[x] = s
     return x
 
