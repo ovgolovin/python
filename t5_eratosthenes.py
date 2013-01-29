@@ -66,11 +66,23 @@ def expanded_oneliner():
             D[x] = p
 
 
-one_liner = lambda: (ifilter(None, chain([2],
-        (D.__setitem__(guess**2, guess) or guess if
-        guess not in D else
-        D.__setitem__(next(x for x in count(guess + 2 * D[guess], 2 * D[guess]) if x not in D), D[guess])
-            for guess in count(3,2)))) for D in ({},)).next()
+one_liner = lambda: (\
+        ifilter(
+            None,
+            chain(
+                [2],
+                (
+                    D.__setitem__(guess**2, guess) or guess if
+                        guess not in D else
+                        D.__setitem__(
+                            next(x for x in count(guess + 2 * D[guess], 2 * D[guess]) if x not in D),
+                            D[guess]
+                        )
+                        for guess in count(3,2)
+                )
+            )
+        ) for D in ({},)
+    ).next()
 
 
 def tests():
