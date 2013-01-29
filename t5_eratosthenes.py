@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 from __future__ import division
-from itertools import islice, count
+from itertools import islice, count, chain, ifilter
 
-def primes():
+def efficient_primes():
     """
     Prime numbers generator based on very efficient variant of Sieve of Eratosthenes algorithm.
 
@@ -22,7 +22,7 @@ def primes():
         yield value
     D = {}  # map each composite integer to its first-found prime factor
             # (the first prime factor that revealed to us that number is a composite is a value in this dict)
-    ps = (p for p in primes()) #subiterator (runs the same prime generator to be used to get squares of its values)
+    ps = (p for p in efficient_primes()) #subiterator (runs the same prime generator to be used to get squares of its values)
     next(ps)    # we may skip p = 2 as we avoid multiples of 2 in the algorithm, and start from p = 3 which multiples
                 # must figure in D
     p = next(ps) # 3
@@ -50,8 +50,35 @@ def add(D, x, s):
     D[x] = s
     return x
 
+
+def expanded_oneliner():
+    D = {}
+    yield 2
+    for guess in count(3, 2):
+        if guess not in D:
+            D[guess**2] = guess
+            yield guess
+        else:
+            p = D[guess]
+            x = guess + 2*p
+            while x in D:
+                x += 2*p
+            D[x] = p
+
+
+def one_liner():
+    D = {}
+    return ifilter(None, chain([2],
+        (D.__setitem__(guess**2, guess) or guess if
+        guess not in D else
+        D.__setitem__(next(x for x in count(guess + 2 * D[guess], 2 * D[guess]) if x not in D), D[guess])
+            for guess in count(3,2))))
+
+
 def tests():
-    assert(list(islice(primes(),0,20)) == [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71])
+    assert(list(islice(efficient_primes(),0,20)) == [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71])
+    assert(list(islice(expanded_oneliner(),0,20)) == [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71])
+    assert(list(islice(one_liner(),0,20)) == [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71])
     print('Test passed!')
 
 if __name__ == '__main__':
