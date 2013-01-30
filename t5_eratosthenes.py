@@ -87,7 +87,7 @@ one_liner = lambda: (\
 
 
 
-class TestCurry(unittest.TestCase):
+class Tests(unittest.TestCase):
     def test_efficient_primes(self):
         self.assertEqual(list(islice(efficient_primes(),0,20)),
             [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71])

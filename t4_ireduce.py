@@ -15,6 +15,6 @@ def ireduce(function, iterable, initializer=None):
         accum_value = function(accum_value, x)
         yield accum_value
 
-class TestCurry(unittest.TestCase):
+class Tests(unittest.TestCase):
     def test_trivial(self):
         self.assertEqual(list(ireduce(mul, [1,2,3,4,5], 1)), [1, 2, 6, 24, 120])
