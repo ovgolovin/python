@@ -2,6 +2,7 @@
 from __future__ import division
 
 from functools import wraps
+import unittest
 
 def make_decorator_lazy(decorator):
     @wraps(decorator)
@@ -15,80 +16,35 @@ def make_decorator_lazy(decorator):
         return decorated
     return new_lazy_decorator
 
+
 def tests():
-    # Without decorator
-    def special_heavy_decorator_for_print_function(f):
-        print("Hi! I'm a brand-new print function decorator. I output the huge next message while decorating!")
-        print("HUGE MESSAGE")
-
+    def decorator(f):
+        print("Running decoration")
         @wraps(f)
         def new_decorated_f(*args, **kwargs):
-            print('This is output by decorated function before the real function is called.')
+            print('Calling f')
             return f(*args, **kwargs)
         return new_decorated_f
 
-    print('\n')
+    def f():
+        print("f is running")
 
+    # Without lazy decorator
     print('Without lazy decorator\n----')
-    @special_heavy_decorator_for_print_function
-    def print_function():
-        print("I (namely 'print_function', no-no, again 'PRINT_FUNCTION') have just printed this kewl piece of text.")
-    print('*Now the decorated function is about to be called.')
-    print_function()
-
+    decorated = decorator(f)
+    print('About to call decorated f')
+    decorated()
     print('\n')
 
-    # With decorator
-    # First variant of application: lazy decorator is applied to decorator every time decorator is applied.
-    # Not very good way of using it as decorator is applied every time the decorator is applied to function
-    print('Using lazy decorator\n----')
-    @make_decorator_lazy(special_heavy_decorator_for_print_function)
-    def print_function():
-        print("I (namely 'print_function', no-no, again 'PRINT_FUNCTION') have just printed this kewl piece of text.")
-    print('*Now the decorated function is about to be called.')
-    print_function()
+    # With lazy decorator.
+    print('With lazy decorator\n----')
+    decorator_made_lazy = make_decorator_lazy(decorator)
+    decorated = decorator_made_lazy(f)
+    print('About to call decorated f')
+    decorated()
+    print("About to call decorated f (decoration shouldn't be applied again)")
+    decorated()
 
-
-    print('\n\n')
-    print('Decorator here should be applied again')
-
-    @make_decorator_lazy(special_heavy_decorator_for_print_function)
-    def print_function():
-        print("I (namely 'print_function', no-no, again 'PRINT_FUNCTION') have just printed this kewl piece of text.")
-    print('*Now the decorated function is about to be called.')
-
-    print_function()
-
-
-    # With decorator (second variant of application: decorated decorator; good if you want the decorator to become
-    # lazy forever)
-    @make_decorator_lazy
-    def special_heavy_decorator_for_print_function(f):
-        print("Hi! I'm a brand-new print function decorator. I output the huge next message while decorating!")
-        print("HUGE MESSAGE")
-
-        @wraps(f)
-        def new_decorated_f(*args, **kwargs):
-            print('This is output by decorated function before the real function is called.')
-            return f(*args, **kwargs)
-        return new_decorated_f
-
-    print('\n')
-
-    print('Using lazy decorator\n----')
-    @special_heavy_decorator_for_print_function
-    def print_function():
-        print("I (namely 'print_function', no-no, again 'PRINT_FUNCTION') have just printed this kewl piece of text.")
-    print('*Now the decorated function is about to be called.')
-    print_function()
-
-    print('\n\n')
-    print('Decorator should NOT be applied again')
-    @special_heavy_decorator_for_print_function
-    def print_function():
-        print("I (namely 'print_function', no-no, again 'PRINT_FUNCTION') have just printed this kewl piece of text.")
-    print('*Now the decorated function is about to be called.')
-    print_function()
 
 if __name__ == '__main__':
     tests()
