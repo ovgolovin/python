@@ -4,6 +4,7 @@ from __future__ import division
 import inspect
 from functools import wraps
 from itertools import chain, izip
+import unittest
 
 
 
@@ -17,7 +18,7 @@ class Curried(object):
         self.__doc__ = f.__doc__
 
         self.positional_arguments = inspect.getargspec(f).args
-        self.positional_arguments_required = self.positional_arguments.copy()
+        self.positional_arguments_required = self.positional_arguments[:]
         default_arguments = inspect.getargspec(f).defaults
         if default_arguments is None:
             self.gathered_arguments = {}
@@ -75,6 +76,7 @@ class Curried(object):
                 '{}={}'.format(key,value)
                 for key, value in chain(arguments_dict.iteritems(),keyword_arguments.iteritems())))
 
+
 def curry(f):
     """
     Make function curried, so that it will accept this parameters passing.
@@ -91,34 +93,26 @@ def curry(f):
     return helper
 
 
-def tests():
+class TestCurry(unittest.TestCase):
 
-    @curry
-    def mul(a,b,c,d=4,*args,**kwargs):
-        """
-        Return multiplication of all arguments
-        """
-        return a*b*c*d
+    def setUp(self):
+        @curry
+        def mul(a,b,c,d=4,*args,**kwargs):
+            return a*b*c*d
+        self.f = mul
 
-    assert(mul(1,2,3,4)==24)
-    assert(mul(1)(2,3,4)==24)
-    assert(mul(1,2)(3,4) == 24)
-    assert(mul(1,2,3) == 24)
-    assert(mul(a=1,b=2,c=3) == 24)
-    assert(mul(1,b=2,c=3,d=4) == 24)
+    def test_positional(self):
+        self.assertEqual(self.f(1,2,3,4), 24)
+        self.assertEqual(self.f(1)(2,3,4), 24)
+        self.assertEqual(self.f(1,2)(3,4), 24)
+        self.assertEqual(self.f(1,2,3), 24)
 
+    def test_kwargs(self):
+        self.assertEqual(self.f(1,2,3,4, z = 'z'), 24)
+        self.assertEqual(self.f(1,2)(3,4, z = 'z'), 24)
+        self.assertEqual(self.f(1,2, z = 'z')(3,4), 24)
+        self.assertEqual(self.f(1,2, z = 'z')(c=3), 24)
 
-    @curry
-    def mul(a,b,c,d,**kwargs):
-        return a*b*c*d
-
-    assert(mul(1,2,3,4, i_am_a_key_word = 'my treasure') == 24)
-    assert(mul(1,2)(3,4, i_am_a_key_word = 'my treasure') == 24)
-    assert(mul(1,2, i_am_a_key_word = 'my treasure')(3,4) == 24)
-    assert(mul(1,2, i_am_a_key_word = 'my treasure')(c=3,d=4) == 24)
-
-
-    print('Test passed!')
 
 if __name__ == '__main__':
-    tests()
+    unittest.main()
