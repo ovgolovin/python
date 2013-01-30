@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import division
 from operator import mul
+import unittest
 
 def ireduce(function, iterable, initializer=None):
     it = iter(iterable)
@@ -14,10 +15,6 @@ def ireduce(function, iterable, initializer=None):
         accum_value = function(accum_value, x)
         yield accum_value
 
-
-def tests():
-    assert(list(ireduce(mul, [1,2,3,4,5], 1)) == [1, 2, 6, 24, 120])
-    print('Test passed!')
-
-if __name__ == '__main__':
-    tests()
+class TestCurry(unittest.TestCase):
+    def test_trivial(self):
+        self.assertEqual(list(ireduce(mul, [1,2,3,4,5], 1)), [1, 2, 6, 24, 120])
