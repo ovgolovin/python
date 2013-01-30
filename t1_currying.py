@@ -58,7 +58,8 @@ class Curried(object):
 
         if not self.expected_arguments: # We have all obligatory arguments as for now
             positional_dict, keyword_arguments = self._get_output_args_and_kwargs()
-            return self.f(*(positional_dict.values() + self.extra_positional_arguments), **keyword_arguments)
+            positional_args = [positional_dict[arg] for arg in self.positional_arguments]
+            return self.f(*(positional_args + self.extra_positional_arguments), **keyword_arguments)
         else:
             return self
 
@@ -98,21 +99,23 @@ class TestCurry(unittest.TestCase):
     def setUp(self):
         @curry
         def mul(a,b,c,d=4,*args,**kwargs):
-            return a*b*c*d
+            return a,b,c,d,args,kwargs
         self.f = mul
 
     def test_positional(self):
-        self.assertEqual(self.f(1,2,3,4), 24)
-        self.assertEqual(self.f(1)(2,3,4), 24)
-        self.assertEqual(self.f(1,2)(3,4), 24)
-        self.assertEqual(self.f(1,2,3), 24)
+        self.assertEqual(self.f(1,2,3,4), (1,2,3,4,(),{}))
+        self.assertEqual(self.f(1)(2,3,4), (1,2,3,4,(),{}))
+        self.assertEqual(self.f(1,2)(3,4), (1,2,3,4,(),{}))
+        self.assertEqual(self.f(1,2,3), (1,2,3,4,(),{}))
 
-    def test_kwargs(self):
-        self.assertEqual(self.f(1,2,3,4, z = 'z'), 24)
-        self.assertEqual(self.f(1,2)(3,4, z = 'z'), 24)
-        self.assertEqual(self.f(1,2, z = 'z')(3,4), 24)
-        self.assertEqual(self.f(1,2, z = 'z')(c=3), 24)
+    def test_extra_args_and_kwargs(self):
+        self.assertEqual(self.f(1,2,3,4, z = 'z'), (1,2,3,4,(),{'z': 'z'}))
+        self.assertEqual(self.f(1,2)(3,4, z = 'z'), (1,2,3,4,(),{'z': 'z'}))
+        self.assertEqual(self.f(1,2, z = 'z')(3,4), (1,2,3,4,(),{'z': 'z'}))
+        self.assertEqual(self.f(1,2, z = 'z')(c=3), (1,2,3,4,(),{'z': 'z'}))
+        self.assertEqual(self.f(1,2, z = 'z')(5,6,7,8,c=100), (1,2,100,6,(7,8),{'z': 'z'}))
+
+    def test_overriding(self):
+        self.assertEqual(self.f(1)(b=2,z=1)(10)(3), (1,10,3,4,(),{'z': 1}))
 
 
-if __name__ == '__main__':
-    unittest.main()
