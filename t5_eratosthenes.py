@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import division
 from itertools import islice, count, chain, ifilter
+import unittest
 
 def efficient_primes():
     """
@@ -85,11 +86,12 @@ one_liner = lambda: (\
     ).next()
 
 
-def tests():
-    assert(list(islice(efficient_primes(),0,20)) == [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71])
-    assert(list(islice(expanded_oneliner(),0,20)) == [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71])
-    assert(list(islice(one_liner(),0,20)) == [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71])
-    print('Test passed!')
 
-if __name__ == '__main__':
-    tests()
+class TestCurry(unittest.TestCase):
+    def test_efficient_primes(self):
+        self.assertEqual(list(islice(efficient_primes(),0,20)),
+            [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71])
+
+    def test_one_liner(self):
+        self.assertEqual(list(islice(one_liner(),0,20)),
+            [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71])
