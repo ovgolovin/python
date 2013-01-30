@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 from __future__ import division
-from functools import wraps
 
 import itertools
 from operator import mul
