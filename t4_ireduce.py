@@ -4,12 +4,16 @@ from operator import mul
 import unittest
 
 def ireduce(function, iterable, initializer=None):
+    """
+    Iterator yielding all values (including intermediate),
+    with the last value equal to the output of traditional reduce.
+    """
     it = iter(iterable)
     if initializer is None:
         try:
             initializer = next(it)
         except StopIteration:
-            raise TypeError('reduce() of empty sequence with no initial value')
+            raise TypeError('ireduce() of empty sequence with no initial value')
     accum_value = initializer
     for x in it:
         accum_value = function(accum_value, x)

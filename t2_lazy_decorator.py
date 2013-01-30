@@ -5,6 +5,9 @@ from functools import wraps
 import unittest
 
 def make_decorator_lazy(decorator):
+    """
+    Make decorator laze, so that it would be applied right before first run of decorated function.
+    """
     @wraps(decorator)
     def new_lazy_decorator(f):
         lazy_decorated = []

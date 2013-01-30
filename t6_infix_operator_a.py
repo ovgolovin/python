@@ -23,6 +23,11 @@ class Infix(object):
 
 
 def make_infix(f):
+    """
+    Make function possible to be used this way:
+    i_f = make_infix(f)
+    f(a,b) <=> a |i_f| b
+    """
     return Infix(f)
 
 
