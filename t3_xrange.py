@@ -71,7 +71,6 @@ class irange(object):
     def _index(self, i):
         return self.start + self.step * i
 
-print list(irange(2,10,100))
 
 class Tests(unittest.TestCase):
 
