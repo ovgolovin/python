@@ -107,6 +107,8 @@ class Tests(unittest.TestCase):
     def test_huge_step(self):
         self.assertEqual(list(irange(2,10,100)), [2])
 
+    def test_empty_sequence_with_step(self):
+        self.assertEqual(list(irange(10,2,2)), [])
 
 
 
