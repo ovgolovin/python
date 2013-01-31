@@ -44,7 +44,10 @@ class irange(object):
                                    self.start, self.stop, self.step)
 
     def __len__(self):
-        return max(0, int((self.stop - self.start) / self.step))
+        if (self.stop - self.start) * (self.step / abs(self.step)) <= 0:
+            return 0
+        else:
+            return 1 + (abs(self.stop - self.start) - 1) // abs(self.step)
 
     def __getitem__(self, index):
         # this also makes the object support iteration protocol
@@ -68,7 +71,7 @@ class irange(object):
     def _index(self, i):
         return self.start + self.step * i
 
-print list(irange(2,10)[2:-2])
+print list(irange(2,10,100))
 
 class Tests(unittest.TestCase):
 
@@ -101,6 +104,9 @@ class Tests(unittest.TestCase):
 
     def test_shouldnt_raise_IndexError_for_valid_negative_numbers(self):
         self.assertEqual(irange(2,10)[-2], 8)
+
+    def test_huge_step(self):
+        self.assertEqual(list(irange(2,10,100)), [2])
 
 
 
