@@ -4,7 +4,7 @@ from __future__ import division
 from functools import wraps
 import unittest
 
-def make_decorator_lazy(decorator):
+def make_decorator_lazy(decorator, apply_on_each_call = False):
     """
     Make decorator laze, so that it would be applied right before first run of decorated function.
     """
@@ -13,41 +13,82 @@ def make_decorator_lazy(decorator):
         lazy_decorated = []
         @wraps(f)
         def decorated(*args, **kwargs):
-            if not lazy_decorated:
-                lazy_decorated.append(decorator(f))
-            return lazy_decorated[0](*args, **kwargs)
+            if apply_on_each_call:
+                return decorator(f)(*args, **kwargs)
+            else:
+                if not lazy_decorated:
+                    lazy_decorated.append(decorator(f))
+                return lazy_decorated[0](*args, **kwargs)
         return decorated
     return new_lazy_decorator
 
 
-def tests():
-    def decorator(f):
-        print("Running decoration")
-        @wraps(f)
-        def new_decorated_f(*args, **kwargs):
-            print('Calling f')
-            return f(*args, **kwargs)
-        return new_decorated_f
 
-    def f():
-        print("f is running")
+class Tests(unittest.TestCase):
+    def setUp(self):
+        def decorator(f):
+            self.cumulative += 1
+            @wraps(f)
+            def new_decorated_f(*args, **kwargs):
+                return f(*args, **kwargs)
+            return new_decorated_f
+        self.decorator = decorator
 
-    # Without lazy decorator
-    print('Without lazy decorator\n----')
-    decorated = decorator(f)
-    print('About to call decorated f')
-    decorated()
-    print('\n')
-
-    # With lazy decorator.
-    print('With lazy decorator\n----')
-    decorator_made_lazy = make_decorator_lazy(decorator)
-    decorated = decorator_made_lazy(f)
-    print('About to call decorated f')
-    decorated()
-    print("About to call decorated f (decoration shouldn't be applied again)")
-    decorated()
+        def f():
+            pass
+        self.f = f
 
 
-if __name__ == '__main__':
-    tests()
+    def test_without_lazy_decorator(self):
+        self.cumulative = 0
+
+        decorated = self.decorator(self.f)
+        self.assertEqual(self.cumulative, 1)
+
+        decorated()
+        self.assertEqual(self.cumulative, 1)
+
+
+    def test_with_lazy_decorator(self):
+        self.cumulative = 0
+
+        decorator_made_lazy = make_decorator_lazy(self.decorator)
+        self.assertEqual(self.cumulative, 0)
+
+        decorated = decorator_made_lazy(self.f)
+        self.assertEqual(self.cumulative, 0)
+
+        decorated()
+        self.assertEqual(self.cumulative, 1)
+
+
+    def test_with_lazy_decorator_two_calls(self):
+        self.cumulative = 0
+
+        decorator_made_lazy = make_decorator_lazy(self.decorator)
+        self.assertEqual(self.cumulative, 0)
+
+        decorated = decorator_made_lazy(self.f)
+        self.assertEqual(self.cumulative, 0)
+
+        decorated()
+        self.assertEqual(self.cumulative, 1)
+
+        decorated()
+        self.assertEqual(self.cumulative, 1)
+
+
+    def test_with_lazy_decorator_two_calls_with_application_on_each_call(self):
+        self.cumulative = 0
+
+        decorator_made_lazy = make_decorator_lazy(self.decorator, apply_on_each_call=True)
+        self.assertEqual(self.cumulative, 0)
+
+        decorated = decorator_made_lazy(self.f)
+        self.assertEqual(self.cumulative, 0)
+
+        decorated()
+        self.assertEqual(self.cumulative, 1)
+
+        decorated()
+        self.assertEqual(self.cumulative, 2)
