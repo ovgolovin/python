@@ -3,7 +3,7 @@ from __future__ import division
 import inspect
 from itertools import izip, chain, imap, takewhile, count, islice
 from collections import namedtuple, defaultdict
-from copy import deepcopy
+from copy import deepcopy, copy
 import unittest
 import t7_scc
 
@@ -12,6 +12,7 @@ _Node = namedtuple('node', ['function', 'depends_on'])
 
 def _split_list(alist, *indices):
     """
+    Split alist at positions specified by indices and return iterator over resulting lists.
     Split alist at positions specified by indices and return iterator over resulting lists.
     """
     list_length = len(alist)
@@ -126,7 +127,7 @@ class Graph(object):
                     message.append(' <-> '.join(scc))
             raise(ValueError('\n'.join(message)))
         self._debug_print(2, "No cyclic dependencies found.")
-        return _CompiledGraph(deepcopy(self._dependencies), deepcopy(self._defaults), self._verbose_level)
+        return _CompiledGraph(copy(self._dependencies), copy(self._defaults), self._verbose_level)
 
 
 class _CompiledGraph(object):
