@@ -10,66 +10,61 @@ class irange(object):
     """
 
     def __init__(self, *args):
-        self._slice = slice(*args)
-        if self._slice.stop is None:
-            # slice(*args) will never put None in stop unless it was
-            # given as None explicitly.
-            raise TypeError("irange stop must not be None")
+        if len(args) > 3:
+            raise(TypeError("irange expects at most 3 arguments"))
+        if len(args) < 1:
+            raise(TypeError("irange expects at least 1 argument"))
+        for arg in args:
+            if not isinstance(arg, int):
+                raise(ValueError("irange accept only arguments of int type. You gave '{arg}'".format(arg=arg)))
 
-    @property
-    def start(self):
-        if self._slice.start is not None:
-            return self._slice.start
-        return 0
+        if len(args) == 1:
+            self._start, self._stop, self._step = 0, args[0], 1
+        elif len(args) == 2:
+            (self._start, self._stop), self._step = args, 1
+        else:
+            self._start, self._stop, self._step = args
 
-    @property
-    def stop(self):
-        return self._slice.stop
+        if self._step == 0:
+            raise ValueError("Step cannot be equal to 0.")
 
-    @property
-    def step(self):
-        if self._slice.step is not None:
-            return self._slice.step
-        return 1
 
     def __hash__(self):
         return hash(self._slice)
 
-    def __cmp__(self, other):
-        return (cmp(type(self), type(other)) or
-                cmp(self._slice, other._slice))
 
     def __repr__(self):
-        return '{!s}({!r}, {!r}, {!r})'.format(self.__class__.__name__,
-                                   self.start, self.stop, self.step)
+        return 'irange({self._start}, {self._stop}, {self._step})'.format(self=self)
+
 
     def __len__(self):
-        if (self.stop - self.start) * (self.step / abs(self.step)) <= 0:
+        if (self._stop - self._start) * (self._step / abs(self._step)) <= 0:
             return 0
         else:
-            return 1 + (abs(self.stop - self.start) - 1) // abs(self.step)
+            return 1 + (abs(self._stop - self._start) - 1) // abs(self._step)
+
 
     def __getitem__(self, index):
         # this also makes the object support iteration protocol
+        # see http://docs.python.org/2/library/functions.html#iter
+
         if isinstance(index, slice):
             start, stop, step = index.indices(len(self))
-            return irange(self._index(start),
-                self._index(stop), step*self.step)
-        elif isinstance(index, (int, long)):
-            if index < 0:
-                fixed_index = index + len(self)
-            else:
-                fixed_index = index
+            # slice(...).index(len) produces slice which is equivalent to len elements of intial slice
+            return irange(self._get_index_of_ith_element(start), self._get_index_of_ith_element(stop), step*self._step)
 
-            if not 0 <= fixed_index < len(self):
-                raise IndexError('Index {:d} out of {!r}'.format(index, self))
+        if isinstance(index, (int, long)):
+            index =  index + len(self) if index < 0 else index
 
-            return self._index(fixed_index)
+            if not 0 <= index < len(self):
+                raise IndexError('Index {index} out of {self}'.format(index=index, self=self))
+
+            return self._get_index_of_ith_element(index)
         else:
             raise TypeError('irange indices must be slices or integers')
 
-    def _index(self, i):
-        return self.start + self.step * i
+    def _get_index_of_ith_element(self, i):
+        return self._start + self._step * i
 
 
 class Tests(unittest.TestCase):
@@ -110,5 +105,17 @@ class Tests(unittest.TestCase):
     def test_empty_sequence_with_step(self):
         self.assertEqual(list(irange(10,2,2)), [])
 
+    def test_raises_typeerror_on_more_than_three_arguments(self):
+        self.assertRaises(TypeError, irange, 10,2,2,1)
+
+    def test_raises_valueerror_on_arguments_other_than_int(self):
+        self.assertRaises(ValueError, irange, 10.2)
+        self.assertRaises(ValueError, irange, 2, 10.1)
+        self.assertRaises(ValueError, irange, 2, 10, 1.1)
+
+    def test_raises_valueerror_on_zero_step(self):
+        self.assertRaises(ValueError, irange, 2, 10, 0)
 
 
+if __name__ == "__main__":
+    unittest.main()
